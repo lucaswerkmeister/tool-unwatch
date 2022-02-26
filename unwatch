@@ -83,10 +83,10 @@ for result in session.get(action='query',
             print(f'UNWATCH {title}')
         else:
             print(f'KEEP {title}')
-    break
 
     session.post(action='watch',
                  unwatch=1,
                  pageids=others_page_ids,
                  token=watch_token)
     print('Unwatched the following page IDs:', others_page_ids)
+    break
