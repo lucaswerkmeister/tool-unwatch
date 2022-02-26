@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from getpass import getpass
 import mwapi
 import sys
 import toolforge
@@ -19,7 +20,7 @@ except IndexError:
 try:
     bot_password = sys.argv[3]
 except IndexError:
-    bot_password = input('bot password (e.g. q7yexgocey88kc3ogg9pk7qccb8d322g): ')
+    bot_password = getpass('bot password (e.g. q7yexgocey88kc3ogg9pk7qccb8d322g): ')
 
 session = mwapi.Session(host=f'https://{wiki_domain}',
                         user_agent=user_agent)
