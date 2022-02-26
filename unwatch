@@ -50,6 +50,7 @@ with connection.cursor() as cursor:
 for result in session.get(action='query',
                           generator='watchlistraw',
                           gwrlimit=50,
+                          gwrnamespace=[0],
                           formatversion=2,
                           continuation=True):
     page_ids = [page['pageid']
