@@ -35,6 +35,10 @@ user_name = session.post(action='login',
                          lgpassword=bot_password,
                          lgtoken=lgtoken)['login']['lgusername']
 
+watch_token = session.get(action='query',
+                          meta='tokens',
+                          type='watch')['query']['tokens']['watchtoken']
+
 connection = toolforge.connect(wiki_db)
 with connection.cursor() as cursor:
     cursor.execute('''SELECT actor_id
@@ -82,5 +86,6 @@ for result in session.get(action='query',
 
     session.post(action='watch',
                  unwatch=1,
-                 pageids=others_page_ids)
+                 pageids=others_page_ids,
+                 token=watch_token)
     print('Unwatched the following page IDs:', others_page_ids)
