@@ -1,0 +1,3 @@
+mwapi
+PyMySQL
+toolforge

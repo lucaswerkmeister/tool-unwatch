@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+
+import mwapi
+import sys
+import toolforge
+
+user_agent = toolforge.set_user_agent('unwatch')
+
+try:
+    wiki_domain = sys.argv[1]
+except IndexError:
+    wiki_domain = input('wiki domain (e.g. en.wikipedia.org): ')
+
+try:
+    bot_user_name = sys.argv[2]
+except IndexError:
+    bot_user_name = input('bot user name (e.g. Your Name@bot_name): ')
+
+try:
+    bot_password = sys.argv[3]
+except IndexError:
+    bot_password = input('bot password (e.g. q7yexgocey88kc3ogg9pk7qccb8d322g): ')
+
+session = mwapi.Session(host=f'https://{wiki_domain}',
+                        user_agent=user_agent)
+response = session.get(action='query',
+                       meta=['siteinfo', 'tokens'],
+                       siprop='general',
+                       type='login')
+wiki_db = response['query']['general']['wikiid']
+lgtoken = response['query']['tokens']['logintoken']
+user_name = session.post(action='login',
+                         lgname=bot_user_name,
+                         lgpassword=bot_password,
+                         lgtoken=lgtoken)['login']['lgusername']
+
+connection = toolforge.connect(wiki_db)
+with connection.cursor() as cursor:
+    cursor.execute('''SELECT actor_id
+                      FROM actor
+                      WHERE actor_name = %s''',
+                   (user_name,))
+    (actor_id,) = cursor.fetchone()
+
+for result in session.get(action='query',
+                          generator='watchlistraw',
+                          gwrlimit=50,
+                          formatversion=2,
+                          continuation=True):
+    page_ids = [page['pageid']
+                for page in result['query']['pages']
+                if 'pageid' in page]
+
+    others_page_ids = []
+    with connection.cursor() as cursor:
+        cursor.execute('''SELECT rev_page, rev_parent_id
+                          FROM (
+                            SELECT rev_page, rev_parent_id,
+                              ROW_NUMBER()
+                              OVER (PARTITION BY rev_page ORDER BY rev_timestamp ASC)
+                              AS rownum
+                            FROM revision
+                            WHERE rev_page IN (%s)
+                            AND rev_actor = %%s
+                          ) AS revs
+                          WHERE rownum = 1''' % ', '.join(['%s'] * len(page_ids)),
+                       page_ids + [actor_id])
+        for page_id, parent_rev_id in cursor.fetchall():
+            if parent_rev_id:
+                others_page_ids.append(page_id)
+
+    for page in result['query']['pages']:
+        if 'pageid' not in page:
+            continue
+        title = page['title']
+        if page['pageid'] in others_page_ids:
+            print(f'UNWATCH {title}')
+        else:
+            print(f'KEEP {title}')
+    break
+
+    session.post(action='watch',
+                 unwatch=1,
+                 pageids=others_page_ids)
+    print('Unwatched the following page IDs:', others_page_ids)
