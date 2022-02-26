@@ -48,6 +48,7 @@ with connection.cursor() as cursor:
                    (user_name,))
     (actor_id,) = cursor.fetchone()
 
+unwatched = 0
 for result in session.get(action='query',
                           generator='watchlistraw',
                           gwrlimit=50,
@@ -90,4 +91,6 @@ for result in session.get(action='query',
                  pageids=others_page_ids,
                  token=watch_token)
     print('Unwatched the following page IDs:', others_page_ids)
-    break
+    unwatched += len(others_page_ids)
+    if unwatched >= 1000:
+        break
