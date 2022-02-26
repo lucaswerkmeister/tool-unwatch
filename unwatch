@@ -5,7 +5,8 @@ import mwapi
 import sys
 import toolforge
 
-user_agent = toolforge.set_user_agent('unwatch')
+user_agent = toolforge.set_user_agent(tool='unwatch',
+                                      email='mail@lucaswerkmeister.de')
 
 try:
     wiki_domain = sys.argv[1]
